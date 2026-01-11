@@ -1,0 +1,549 @@
+/* David Roca Puig */
+/* almogaver@gmail.com */
+
+/* Fet per al control de visitants del Celler Martin Faixó */
+
+/* Aquesta app està sota llicència Llicència CreativeCommons BY-NC-SA 3.0 ES */
+/* BY: Cal citar l'autoria. */
+/* NC: No es permet l'ús comercial. */
+/* SA: Les obres derivades s'han de compartir amb la mateixa llicència. */
+
+
+
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#7c3aed">
+    <title>Control de Visitants - Celler</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --accent: #10b981;
+            --surface: #ffffff;
+            --bg: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-main);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: var(--shadow-float);
+            margin: auto;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .section {
+            margin-bottom: 28px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section.hidden { display: none; }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+
+        .btn-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .btn-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .option-btn {
+            padding: 14px 10px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 54px;
+        }
+
+        .option-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .conditional-field {
+            margin-top: 15px;
+            padding: 20px;
+            background: #f1f5f9;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .conditional-field.hidden { display: none; }
+
+        #submitBtn {
+            width: 100%;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #submitBtn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .daily-counter {
+            text-align: center;
+            margin-top: 30px;
+            padding: 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: var(--radius);
+            color: #065f46;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .modal-btn.secondary {
+            background: #e2e8f0;
+            color: var(--text-main);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 25px 15px; }
+            .btn-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+            .btn-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🍷 Registre de Visitants</h1>
+            <div class="subtitle">Gestió d'entrada al celler</div>
+        </header>
+
+        <form id="visitorForm">
+            <div class="section">
+                <label class="section-title"><span>👥</span> Nombre de persones</label>
+                <input type="number" id="numPersones" placeholder="Ex: 2" min="1" inputmode="numeric" required>
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>🎯</span> Objectiu Visita</label>
+                <div class="btn-grid cols-3">
+                    <button type="button" class="option-btn" data-group="destinacio" data-value="Experiències">Experiència</button>
+                    <button type="button" class="option-btn" data-group="destinacio" data-value="Wine Bar">Wine Bar</button>
+                    <button type="button" class="option-btn" data-group="destinacio" data-value="Botiga">Botiga</button>
+                </div>
+            </div>
+
+            <div class="section hidden" id="comVenenSection">
+                <label class="section-title"><span>🚗</span> Com venen?</label>
+                <div class="btn-grid cols-3">
+                    <button type="button" class="option-btn" data-group="comVenen" data-value="Lliure">Lliure</button>
+                    <button type="button" class="option-btn" data-group="comVenen" data-value="Allotjats al Mas">Allotjats</button>
+                    <button type="button" class="option-btn" data-group="comVenen" data-value="Recomanats">Recomanats</button>
+                </div>
+            </div>
+
+            <div class="section hidden" id="tipusVisitaSection">
+                <label class="section-title"><span>🍇</span> Tipus d'experiència (Packs)</label>
+                <div class="btn-grid cols-2">
+                    <button type="button" class="option-btn" data-group="tipusVisita" data-value="VT">VT</button>
+                    <button type="button" class="option-btn" data-group="tipusVisita" data-value="EVT">EVT</button>
+                    <button type="button" class="option-btn" data-group="tipusVisita" data-value="VTM">VTM</button>
+                    <button type="button" class="option-btn" data-group="tipusVisita" data-value="MASOS">MASOS</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>🌍</span> Procedència</label>
+                <select id="procedencia" required>
+                    <option value="">Selecciona país...</option>
+                    <option value="Catalunya">Catalunya</option>
+                    <option value="Espanya">Espanya</option>
+                    <option value="França">França</option>
+                    <option value="UK">UK</option>
+                    <option value="Alemanya">Alemanya</option>
+                    <option value="Holanda">Holanda</option>
+                    <option value="Nòrdics">Nòrdics</option>
+                    <option value="Belgica">Bèlgica</option>
+                    <option value="Resta d'Europa">Resta d'Europa</option>
+                    <option value="Russia">Rússia</option>
+                    <option value="USA i Canadà">USA i Canadà</option>
+                    <option value="Altres">Altres (especifica...)</option>
+                </select>
+
+                <div id="catalunyaFields" class="conditional-field hidden">
+                    <input type="text" id="comarca" list="comarquesList" placeholder="Comarca" style="margin-bottom: 8px;">
+                    <datalist id="comarquesList">
+                        <option value="Alt Camp"><option value="Alt Empordà"><option value="Alt Penedès"><option value="Alt Urgell"><option value="Alta Ribagorça"><option value="Anoia"><option value="Aran"><option value="Bages"><option value="Baix Camp"><option value="Baix Ebre"><option value="Baix Empordà"><option value="Baix Llobregat"><option value="Baix Penedès"><option value="Barcelonès"><option value="Berguedà"><option value="Cerdanya"><option value="Conca de Barberà"><option value="Garraf"><option value="Garrigues"><option value="Garrotxa"><option value="Gironès"><option value="Maresme"><option value="Moianès"><option value="Montsià"><option value="Noguera"><option value="Osona"><option value="Pallars Jussà"><option value="Pallars Sobirà"><option value="Pla de l'Estany"><option value="Pla d'Urgell"><option value="Priorat"><option value="Ribera d'Ebre"><option value="Ripollès"><option value="Segarra"><option value="Segrià"><option value="Selva"><option value="Solsonès"><option value="Tarragonès"><option value="Terra Alta"><option value="Urgell"><option value="Vallès Occidental"><option value="Vallès Oriental">
+                    </datalist>
+                    <input type="text" id="poblacio" placeholder="Poble o Ciutat">
+                </div>
+
+                <div id="altresPaisFields" class="conditional-field hidden">
+                    <select id="altresPais">
+                        <option value="">Quin país?</option>
+                        <option value="Suïssa">Suïssa</option>
+                        <option value="Polònia">Polònia</option>
+                        <option value="Itàlia">Itàlia</option>
+                        <option value="Àustria">Àustria</option>
+                        <option value="República Txeca">República Txeca</option>
+                        <option value="Xina">Xina</option>
+                        <option value="Japó">Japó</option>
+                        <option value="Austràlia">Austràlia</option>
+                        <option value="Resta del Món">Resta del Món</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>🎂</span> Franja d'edat</label>
+                <div class="btn-grid cols-4">
+                    <button type="button" class="option-btn" data-group="edat" data-value="18-35">18-35</button>
+                    <button type="button" class="option-btn" data-group="edat" data-value="36-50">36-50</button>
+                    <button type="button" class="option-btn" data-group="edat" data-value="51-65">51-65</button>
+                    <button type="button" class="option-btn" data-group="edat" data-value="+65">+65</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>💼</span> Tipologia de client</label>
+                <div class="btn-grid cols-3">
+                    <button type="button" class="option-btn" data-group="tipusClient" data-value="Professional">Professional</button>
+                    <button type="button" class="option-btn" data-group="tipusClient" data-value="Amb coneixements">Amb coneixements</button>
+                    <button type="button" class="option-btn" data-group="tipusClient" data-value="Sense coneixements">Sense coneixements</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>💰</span> Despesa (€)</label>
+                <input type="text" id="despesa" placeholder="0,00" inputmode="decimal">
+            </div>
+
+            <div class="section">
+                <label class="section-title"><span>📝</span> Notes</label>
+                <textarea id="observacions" rows="2" placeholder="Alguna observació?"></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn" disabled>Registrar Visita</button>
+        </form>
+
+        <div class="daily-counter" id="counterUI">Avui: 0 visitants</div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div style="font-size: 40px;">⚠️</div>
+            <h3>Grup nombrós</h3>
+            <p id="confirmMsg" style="margin: 15px 0; color: var(--text-muted);"></p>
+            <button class="modal-btn" onclick="confirmLargeGroup()">Sí, és correcte</button>
+            <button class="modal-btn secondary" onclick="closeModal('confirmModal')">Revisar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div style="font-size: 50px; margin-bottom: 10px;">✅</div>
+            <h2>Registrat!</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Dades enviades al Google Sheets.</p>
+            <button class="modal-btn" onclick="closeModal('successModal')">D'acord</button>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYY_P426QXUunWqenTFLcCgfVfoOgRFMzwuOO7GBlE87V6HpKRLIR-J3_t4GDh28Tf/exec';
+        
+        let largeGroupConfirmed = false;
+
+        const state = {
+            tipusClient: null,
+            comVenen: null,
+            tipusVisita: null,
+            destinacio: null,
+            edat: null
+        };
+
+        // Carrega inicial del comptador des del servidor (Casella F3)
+        window.onload = function() {
+            fetch(SCRIPT_URL)
+                .then(res => res.json())
+                .then(res => {
+                    if(res.dailyCount !== undefined) {
+                        document.getElementById('counterUI').textContent = `Avui: ${res.dailyCount} visitants registrats`;
+                    }
+                }).catch(e => console.log("Error carregant comptador"));
+        };
+
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const group = this.dataset.group;
+                const value = this.dataset.value;
+
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    state[group] = null;
+                } else {
+                    document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state[group] = value;
+                }
+
+                if (group === 'destinacio') handleDestinacioChange(state.destinacio);
+                validateForm();
+            });
+        });
+
+        function handleDestinacioChange(value) {
+            const tvSec = document.getElementById('tipusVisitaSection');
+            const cvSec = document.getElementById('comVenenSection');
+            tvSec.classList.add('hidden');
+            cvSec.classList.add('hidden');
+            
+            if (value === 'Experiències') {
+                tvSec.classList.remove('hidden');
+                cvSec.classList.remove('hidden');
+            } else if (value === 'Wine Bar' || value === 'Botiga') {
+                cvSec.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('procedencia').addEventListener('change', function() {
+            document.getElementById('catalunyaFields').classList.toggle('hidden', this.value !== 'Catalunya');
+            document.getElementById('altresPaisFields').classList.toggle('hidden', this.value !== 'Altres');
+            validateForm();
+        });
+
+        function validateForm() {
+            const num = document.getElementById('numPersones').value;
+            const proc = document.getElementById('procedencia').value;
+            const dest = state.destinacio;
+            const edat = state.edat;
+            const altP = document.getElementById('altresPais').value;
+
+            let valid = num > 0 && proc && dest && edat && state.comVenen;
+            
+            if (proc === 'Altres' && !altP) valid = false;
+            if (dest === 'Experiències' && !state.tipusVisita) valid = false;
+
+            document.getElementById('submitBtn').disabled = !valid;
+        }
+
+        document.getElementById('numPersones').addEventListener('input', function() {
+            largeGroupConfirmed = false;
+            validateForm();
+        });
+        document.getElementById('altresPais').addEventListener('change', validateForm);
+
+        document.getElementById('visitorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const n = parseInt(document.getElementById('numPersones').value);
+            if (n > 12 && !largeGroupConfirmed) {
+                document.getElementById('confirmMsg').textContent = `Has indicat ${n} persones. Vols continuar?`;
+                document.getElementById('confirmModal').style.display = 'flex';
+            } else {
+                executeSubmit();
+            }
+        });
+
+        function confirmLargeGroup() {
+            largeGroupConfirmed = true;
+            closeModal('confirmModal');
+            executeSubmit();
+        }
+
+        async function executeSubmit() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Guardant...';
+
+            const data = {
+                numPersones: document.getElementById('numPersones').value,
+                tipusClient: state.tipusClient,
+                edat: state.edat,
+                procedencia: document.getElementById('procedencia').value,
+                altresPais: document.getElementById('altresPais').value,
+                comarca: document.getElementById('comarca').value,
+                poblacio: document.getElementById('poblacio').value,
+                destinacio: state.destinacio,
+                comVenen: state.comVenen,
+                tipusVisita: state.tipusVisita,
+                despesa: document.getElementById('despesa').value,
+                observacions: document.getElementById('observacions').value
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === "ok") {
+                    // Actualitzem el comptador visual amb la dada de F3 que ens torna el servidor
+                    document.getElementById('counterUI').textContent = `Avui: ${res.dailyCount} visitants registrats`;
+                    document.getElementById('successModal').style.display = 'flex';
+                    resetForm();
+                } else {
+                    throw new Error(res.message);
+                }
+            })
+            .catch(err => {
+                alert('Error al guardar: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = 'Registrar Visita';
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('visitorForm').reset();
+            document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+            document.getElementById('catalunyaFields').classList.add('hidden');
+            document.getElementById('altresPaisFields').classList.add('hidden');
+            handleDestinacioChange(null);
+            Object.keys(state).forEach(k => state[k] = null);
+            largeGroupConfirmed = false;
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Registrar Visita';
+            validateForm();
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>
