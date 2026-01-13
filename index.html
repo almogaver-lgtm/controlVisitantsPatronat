@@ -1,25 +1,27 @@
-/* David Roca Puig */
-/* almogaver@gmail.com */
-
-/* Fet per al control de visitants del Celler Martin Faixó */
-
-/* Aquesta app està sota llicència Llicència CreativeCommons BY-NC-SA 3.0 ES */
-/* BY: Cal citar l'autoria. */
-/* NC: No es permet l'ús comercial. */
-/* SA: Les obres derivades s'han de compartir amb la mateixa llicència. */
-
-
-
 <!DOCTYPE html>
+<!-- 
+Control de Visitants per a Cellers de l'Empordà
+Autor: David Roca Puig 
+Contacte: almogaver@gmail.com
+
+Aplicació desenvolupada per al control de visitants, en especial, del Celler Martin Faixó
+segons els requisits del Patronat de Turisme de la Costa Brava.
+
+Llicència: Creative Commons BY-NC-SA 3.0 ES
+- BY: Cal citar l'autoria
+- NC: No es permet l'ús comercial
+- SA: Les obres derivades s'han de compartir amb la mateixa llicència
+-->
+
 <html lang="ca">
 <head>
-    <link rel="icon" href="drinking.png">
+    <link rel="icon" href="logo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#7c3aed">
-    <title>Control de Visitants - Celler</title>
+    <title>Control de Visitants - CellerMF</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -252,8 +254,8 @@
 
     <div class="container">
         <header>
-            <h1>🍷 Registre de Visitants</h1>
-            <div class="subtitle">Gestió d'entrada al celler</div>
+            <h1>🍷 Registre de Visitants 🍷</h1>
+            <div class="subtitle">Cada visita compta!</div>
         </header>
 
         <form id="visitorForm">
@@ -547,5 +549,4 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     </script>
 </body>
-
 </html>
