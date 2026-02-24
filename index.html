@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<!--
+  Control de Visitants per a Cellers de l'Empordà — VERSIÓ 3
+  Original: David Roca Puig · almogaver@gmail.com
+  Dashboard & Theme Extension: Antigravity AI
+
+  Llicència: Creative Commons BY-NC-SA 3.0 ES
+  - BY: Cal citar l'autoria
+  - NC: No es permet l'ús comercial
+  - SA: Les obres derivades s'han de compartir amb la mateixa llicència
+-->
+<html lang="ca">
+
+<head>
+    <link rel="icon" href="logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#7c3aed">
+    <title>Control de Visitants - CellerMF</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <style>
+        /* =============================================
+       SISTEMA DE VARIABLES — DOS TEMES
+       L'atribut [data-theme="dark"] sobreescriu :root
+    ============================================= */
+        :root {
+            /* --- TEMA CLÀSSIC (per defecte) --- */
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --accent: #10b981;
+            --accent2: #7c3aed;
+            --bg-start: #6366f1;
+            --bg-end: #a855f7;
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-alt: #f1f5f9;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --btn-bg: #ffffff;
+            --btn-border: #e2e8f0;
+            --btn-text: #1e293b;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+            --modal-bg: #ffffff;
+            --radius: 16px;
+            --radius-lg: 24px;
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, .1), 0 10px 10px -5px rgba(0, 0, 0, .04);
+            --counter-bg: rgba(16, 185, 129, .1);
+            --counter-color: #065f46;
+            --font-main: 'Inter', sans-serif;
+            --chart-theme: light;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --nav-border: rgba(124, 58, 237, 0.2);
+            --nav-text: #64748b;
+            --nav-active-bg: #7c3aed;
+            --stat-val-color: #7c3aed;
+            --kpi-bg: rgba(255, 255, 255, 0.6);
+        }
+
+        [data-theme="dark"] {
+            /* --- TEMA FUTURISTA FOSC --- */
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --accent: #00f2fe;
+            --accent2: #f472b6;
+            --bg-start: #020617;
+            --bg-end: #0f172a;
+            --surface: rgba(15, 23, 42, 0.85);
+            --surface-alt: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --btn-bg: rgba(255, 255, 255, 0.05);
+            --btn-border: rgba(255, 255, 255, 0.12);
+            --btn-text: #94a3b8;
+            --input-bg: rgba(0, 0, 0, 0.25);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --modal-bg: rgba(15, 23, 42, 0.95);
+            --radius: 18px;
+            --radius-lg: 28px;
+            --shadow: 0 25px 50px rgba(0, 0, 0, .6);
+            --counter-bg: rgba(0, 242, 254, 0.08);
+            --counter-color: #00f2fe;
+            --font-main: 'Outfit', 'Inter', sans-serif;
+            --chart-theme: dark;
+            --nav-bg: rgba(10, 10, 30, 0.85);
+            --nav-border: rgba(139, 92, 246, 0.3);
+            --nav-text: #64748b;
+            --nav-active-bg: #8b5cf6;
+            --stat-val-color: #00f2fe;
+            --kpi-bg: rgba(255, 255, 255, 0.04);
+        }
+
+        /* =============================================
+       RESET & BASE
+    ============================================= */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px 20px 110px;
+            color: var(--text-main);
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* Dark mode: fixed radial accents */
+        [data-theme="dark"] body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(at 15% 15%, rgba(139, 92, 246, 0.12) 0px, transparent 55%),
+                radial-gradient(at 85% 85%, rgba(0, 242, 254, 0.07) 0px, transparent 55%);
+        }
+
+        /* =============================================
+       CONTAINER PRINCIPAL
+    ============================================= */
+        .app-wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+        }
+
+        /* =============================================
+       HEADER
+    ============================================= */
+        header {
+            text-align: center;
+            padding: 28px 32px 22px;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        [data-theme="dark"] header h1 {
+            background: linear-gradient(90deg, #fff 20%, var(--primary) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header .subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* =============================================
+       VIEWS (REGISTRE / DASHBOARD)
+    ============================================= */
+        .view-panel {
+            display: none;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            padding: 24px 32px 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .view-panel.active {
+            display: block;
+            animation: fadeUp .4s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =============================================
+       FORMULARI — IDÈNTIC A FINAL.HTML
+    ============================================= */
+        .section {
+            margin-bottom: 28px;
+            animation: fadeUp .4s ease-out forwards;
+        }
+
+        .section.hidden {
+            display: none !important;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--input-border);
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text-main);
+            transition: border-color .2s, box-shadow .2s;
+            appearance: auto;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, .15);
+        }
+
+        [data-theme="dark"] select option {
+            background: #0f172a;
+        }
+
+        .btn-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .btn-grid.cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .btn-grid.cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-grid.cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .option-btn {
+            padding: 14px 8px;
+            min-height: 54px;
+            border: 2px solid var(--btn-border);
+            background: var(--btn-bg);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--btn-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all .2s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .option-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 14px rgba(124, 58, 237, .35);
+            transform: translateY(-1px);
+        }
+
+        .conditional-field {
+            margin-top: 14px;
+            padding: 18px;
+            background: var(--surface-alt);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            display: grid;
+            gap: 10px;
+        }
+
+        .conditional-field.hidden {
+            display: none;
+        }
+
+        #submitBtn {
+            width: 100%;
+            padding: 20px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 17px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, .3);
+            transition: all .3s;
+        }
+
+        #submitBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(124, 58, 237, .4);
+        }
+
+        #submitBtn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            opacity: .7;
+            box-shadow: none;
+        }
+
+        [data-theme="dark"] #submitBtn:disabled {
+            background: #1e293b;
+            color: #475569;
+        }
+
+        .daily-counter {
+            text-align: center;
+            margin-top: 24px;
+            padding: 14px;
+            background: var(--counter-bg);
+            border-radius: var(--radius);
+            color: var(--counter-color);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* =============================================
+       DASHBOARD
+    ============================================= */
+        /* Range bar al top */
+        .range-bar {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .range-pill {
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .range-pill.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* 3 KPI cards */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--kpi-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 12px;
+            text-align: center;
+        }
+
+        .kpi-label {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+        }
+
+        .kpi-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--stat-val-color);
+            margin: 6px 0 2px;
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        /* Income Layout (Amplified) */
+        .income-layout {
+            display: grid;
+            grid-template-columns: 1fr 130px;
+            gap: 20px;
+            align-items: center;
+        }
+
+        @media (max-width: 600px) {
+            .income-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .side-kpi {
+                border-left: none;
+                border-top: 1px solid var(--border);
+                padding-top: 15px;
+                padding-left: 0;
+            }
+        }
+
+        .side-kpi {
+            text-align: center;
+            border-left: 1px solid var(--border);
+            padding-left: 20px;
+        }
+
+        .side-kpi .label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .side-kpi .val {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .chart-section {
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Zoom slider for origins */
+        .zoom-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .zoom-row label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .zoom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, .4);
+        }
+
+        /* Experience drilldown */
+        .drilldown-panel {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height .4s ease, opacity .3s ease, margin .3s ease;
+            margin-top: 0;
+        }
+
+        .drilldown-panel.open {
+            max-height: 250px;
+            opacity: 1;
+            margin-top: 12px;
+        }
+
+        .drilldown-hint {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            opacity: .7;
+        }
+
+        .loading-msg {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        /* =============================================
+       FAB THEME TOGGLE
+    ============================================= */
+        #themeFab {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            z-index: 900;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(124, 58, 237, .45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: transform .3s, box-shadow .3s;
+        }
+
+        #themeFab:hover {
+            transform: scale(1.12) rotate(15deg);
+            box-shadow: 0 10px 30px rgba(124, 58, 237, .6);
+        }
+
+        #themeFab .fab-tooltip {
+            position: absolute;
+            right: 60px;
+            background: var(--text-main);
+            color: var(--surface);
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 5px 10px;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+
+        #themeFab:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        /* =============================================
+       NAVIGATION BAR
+    ============================================= */
+        .nav-bar {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--nav-border);
+            border-radius: 40px;
+            padding: 6px;
+            display: flex;
+            gap: 4px;
+            z-index: 800;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
+        }
+
+        .nav-btn {
+            padding: 11px 22px;
+            border-radius: 30px;
+            border: none;
+            background: transparent;
+            color: var(--nav-text);
+            font-weight: 700;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all .3s;
+        }
+
+        .nav-btn.active {
+            background: var(--nav-active-bg);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, .4);
+        }
+
+        /* =============================================
+       MODALS
+    ============================================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .65);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .4);
+            animation: fadeUp .3s ease-out;
+        }
+
+        .modal-content h2,
+        .modal-content h3 {
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .modal-content p {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 700;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .modal-btn.secondary {
+            background: var(--surface-alt);
+            color: var(--text-main);
+        }
+
+        /* =============================================
+       RESPONSIVE
+    ============================================= */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px 12px 110px;
+            }
+
+            header,
+            .view-panel {
+                border-radius: var(--radius-lg);
+                border: 1px solid var(--border);
+            }
+
+            header {
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                border-bottom: none;
+            }
+
+            .view-panel {
+                padding: 20px 16px 28px;
+            }
+
+            .btn-grid.cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .btn-grid.cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .kpi-row {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .kpi-val {
+                font-size: 20px;
+            }
+
+            .range-pill {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+
+            #themeFab {
+                bottom: 86px;
+                right: 12px;
+                width: 46px;
+                height: 46px;
+                font-size: 18px;
+            }
+
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+
+            .expense-kpis {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-wrap">
+        <!-- ======================== HEADER ======================== -->
+        <header>
+            <h1>🍷 Registre de Visitants</h1>
+            <div class="subtitle">Celler Martín Faixó · Patronat Turisme Costa Brava</div>
+        </header>
+
+        <!-- ======================== VISTA: REGISTRE ======================== -->
+        <div id="view-reg" class="view-panel active">
+            <form id="visitorForm" autocomplete="off">
+
+                <!-- Nombre de persones -->
+                <div class="section">
+                    <label class="section-title"><span>👥</span> Nombre de persones</label>
+                    <input type="number" id="numPersones" placeholder="Ex: 2" min="1" inputmode="numeric" required>
+                </div>
+
+                <!-- Objectiu Visita -->
+                <div class="section">
+                    <label class="section-title"><span>🎯</span> Objectiu Visita</label>
+                    <div class="btn-grid cols-3">
+                        <button type="button" class="option-btn" data-group="destinacio"
+                            data-value="Experiències">Experiència</button>
+                        <button type="button" class="option-btn" data-group="destinacio" data-value="Wine Bar">Wine
+                            Bar</button>
+                        <button type="button" class="option-btn" data-group="destinacio"
+                            data-value="Botiga">Botiga</button>
+                    </div>
+                </div>
+
+                <!-- Com venen? (condicional: si hi ha destinació) -->
+                <div class="section hidden" id="comVenenSection">
+                    <label class="section-title"><span>🚗</span> Com venen?</label>
+                    <div class="btn-grid cols-3">
+                        <button type="button" class="option-btn" data-group="comVenen"
+                            data-value="Lliure">Lliure</button>
+                        <button type="button" class="option-btn" data-group="comVenen"
+                            data-value="Allotjats al Mas">Allotjats</button>
+                        <button type="button" class="option-btn" data-group="comVenen"
+                            data-value="Recomanats">Recomanats</button>
+                    </div>
+                </div>
+
+                <!-- Tipus d'experiència (condicional: si és Experiències) -->
+                <div class="section hidden" id="tipusVisitaSection">
+                    <label class="section-title"><span>🍇</span> Tipus d'experiència (Packs)</label>
+                    <div class="btn-grid cols-2">
+                        <button type="button" class="option-btn" data-group="tipusVisita" data-value="VT">VT</button>
+                        <button type="button" class="option-btn" data-group="tipusVisita" data-value="EVT">EVT</button>
+                        <button type="button" class="option-btn" data-group="tipusVisita" data-value="VTM">VTM</button>
+                        <button type="button" class="option-btn" data-group="tipusVisita"
+                            data-value="MASOS">MASOS</button>
+                    </div>
+                </div>
+
+                <!-- Procedència -->
+                <div class="section">
+                    <label class="section-title"><span>🌍</span> Procedència</label>
+                    <select id="procedencia" required>
+                        <option value="">Selecciona país...</option>
+                        <option value="Catalunya">Catalunya</option>
+                        <option value="Espanya">Espanya</option>
+                        <option value="França">França</option>
+                        <option value="UK">UK</option>
+                        <option value="Alemanya">Alemanya</option>
+                        <option value="Holanda">Holanda</option>
+                        <option value="Nòrdics">Nòrdics</option>
+                        <option value="Belgica">Bèlgica</option>
+                        <option value="Resta d'Europa">Resta d'Europa</option>
+                        <option value="Russia">Rússia</option>
+                        <option value="USA i Canadà">USA i Canadà</option>
+                        <option value="Altres">Altres (especifica...)</option>
+                    </select>
+
+                    <!-- Catalunya: comarca + poble -->
+                    <div id="catalunyaFields" class="conditional-field hidden">
+                        <input type="text" id="comarca" list="comarquesList" placeholder="Comarca">
+                        <datalist id="comarquesList">
+                            <option value="Alt Camp">
+                            <option value="Alt Empordà">
+                            <option value="Alt Penedès">
+                            <option value="Alt Urgell">
+                            <option value="Alta Ribagorça">
+                            <option value="Anoia">
+                            <option value="Aran">
+                            <option value="Bages">
+                            <option value="Baix Camp">
+                            <option value="Baix Ebre">
+                            <option value="Baix Empordà">
+                            <option value="Baix Llobregat">
+                            <option value="Baix Penedès">
+                            <option value="Barcelonès">
+                            <option value="Berguedà">
+                            <option value="Cerdanya">
+                            <option value="Conca de Barberà">
+                            <option value="Garraf">
+                            <option value="Garrigues">
+                            <option value="Garrotxa">
+                            <option value="Gironès">
+                            <option value="Maresme">
+                            <option value="Moianès">
+                            <option value="Montsià">
+                            <option value="Noguera">
+                            <option value="Osona">
+                            <option value="Pallars Jussà">
+                            <option value="Pallars Sobirà">
+                            <option value="Pla de l'Estany">
+                            <option value="Pla d'Urgell">
+                            <option value="Priorat">
+                            <option value="Ribera d'Ebre">
+                            <option value="Ripollès">
+                            <option value="Segarra">
+                            <option value="Segrià">
+                            <option value="Selva">
+                            <option value="Solsonès">
+                            <option value="Tarragonès">
+                            <option value="Terra Alta">
+                            <option value="Urgell">
+                            <option value="Vallès Occidental">
+                            <option value="Vallès Oriental">
+                        </datalist>
+                        <input type="text" id="poblacio" placeholder="Poble o Ciutat">
+                    </div>
+
+                    <!-- Altres països -->
+                    <div id="altresPaisFields" class="conditional-field hidden">
+                        <select id="altresPais">
+                            <option value="">Quin país?</option>
+                            <option value="Suïssa">Suïssa</option>
+                            <option value="Polònia">Polònia</option>
+                            <option value="Itàlia">Itàlia</option>
+                            <option value="Àustria">Àustria</option>
+                            <option value="República Txeca">República Txeca</option>
+                            <option value="Xina">Xina</option>
+                            <option value="Japó">Japó</option>
+                            <option value="Austràlia">Austràlia</option>
+                            <option value="Resta del Món">Resta del Món</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Franja d'edat -->
+                <div class="section">
+                    <label class="section-title"><span>🎂</span> Franja d'edat</label>
+                    <div class="btn-grid cols-4">
+                        <button type="button" class="option-btn" data-group="edat" data-value="18-35">18-35</button>
+                        <button type="button" class="option-btn" data-group="edat" data-value="36-50">36-50</button>
+                        <button type="button" class="option-btn" data-group="edat" data-value="51-65">51-65</button>
+                        <button type="button" class="option-btn" data-group="edat" data-value="+65">+65</button>
+                    </div>
+                </div>
+
+                <!-- Tipologia de client -->
+                <div class="section">
+                    <label class="section-title"><span>💼</span> Tipologia de client</label>
+                    <div class="btn-grid cols-3">
+                        <button type="button" class="option-btn" data-group="tipusClient"
+                            data-value="Professional">Professional</button>
+                        <button type="button" class="option-btn" data-group="tipusClient"
+                            data-value="Amb coneixements">Amb coneixements</button>
+                        <button type="button" class="option-btn" data-group="tipusClient"
+                            data-value="Sense coneixements">Sense coneixements</button>
+                    </div>
+                </div>
+
+                <!-- Despesa -->
+                <div class="section">
+                    <label class="section-title"><span>💰</span> Despesa (€)</label>
+                    <input type="text" id="despesa" placeholder="0,00" inputmode="decimal">
+                </div>
+
+                <!-- Notes -->
+                <div class="section">
+                    <label class="section-title"><span>📝</span> Notes</label>
+                    <textarea id="observacions" rows="2" placeholder="Alguna observació?"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" disabled>Registrar Visita</button>
+            </form>
+
+            <div class="daily-counter" id="counterUI">Avui: 0 visitants</div>
+        </div>
+
+        <!-- ======================== VISTA: DASHBOARD ======================== -->
+        <div id="view-dash" class="view-panel">
+
+            <!-- Selector de rang temporal (TOP) -->
+            <div class="range-bar">
+                <button class="range-pill active" onclick="setRange('day',this)">1D</button>
+                <button class="range-pill" onclick="setRange('week',this)">1S</button>
+                <button class="range-pill" onclick="setRange('month',this)">1M</button>
+                <button class="range-pill" onclick="setRange('quarter',this)">1T</button>
+                <button class="range-pill" onclick="setRange('total',this)">TOT</button>
+            </div>
+
+            <!-- 3 KPIs superior (Anàlisi de Període) -->
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-label">Visitants (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-val" id="kpi-visitors-period">0</div>
+                    <div class="kpi-sub" id="visitors-sub-label">vistes del període</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Mitjana (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-val" id="kpi-avg" style="color: var(--primary);">0€</div>
+                    <div class="kpi-sub" id="avg-sub-label">per visita</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Període (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-val" id="kpi-income">0€</div>
+                    <div class="kpi-sub">ingressos acumulats</div>
+                </div>
+            </div>
+
+            <!-- Anàlisi d'Ingressos -->
+            <div class="chart-section">
+                <div class="chart-title">📈 Evolució d'ingressos (<span id="range-label">avui</span>)</div>
+                <div id="chart-expense"></div>
+            </div>
+
+            <!-- Hores Punta -->
+            <div class="chart-section">
+                <div class="chart-title">⏰ Flux horari</div>
+                <div id="chart-hourly"></div>
+            </div>
+
+            <!-- Procedències amb zoom -->
+            <div class="chart-section">
+                <div class="chart-title">🌍 Procedències</div>
+                <div class="zoom-row">
+                    <label>🔍 Zoom</label>
+                    <input type="range" class="zoom-slider" id="originsZoom" min="5" max="100" value="100" step="5"
+                        oninput="applyOriginsZoom(this.value)">
+                </div>
+                <div id="chart-origins"></div>
+            </div>
+
+            <!-- Edats + Mix de Negoci — costat a costat -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="chart-section">
+                    <div class="chart-title">🎂 Edats</div>
+                    <div id="chart-ages"></div>
+                </div>
+                <div class="chart-section">
+                    <div class="chart-title">🍷 Mix de negoci</div>
+                    <div id="chart-business"></div>
+                    <div class="drilldown-hint">Toca "Experiències" per desglossar</div>
+                    <div class="drilldown-panel" id="expDrilldown">
+                        <div id="chart-exp-detail"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /view-dash -->
+    </div><!-- /app-wrap -->
+
+    <!-- ======================== FAB THEME TOGGLE ======================== -->
+    <button id="themeFab" onclick="toggleTheme()" aria-label="Canviar tema">
+        <span class="fab-tooltip">Canviar tema</span>
+        <span id="fabIcon">🌙</span>
+    </button>
+
+    <!-- ======================== NAV BAR ======================== -->
+    <nav class="nav-bar">
+        <button class="nav-btn active" id="nav-reg" onclick="switchView('reg')">
+            ✏️ Registre
+        </button>
+        <button class="nav-btn" id="nav-dash" onclick="switchView('dash')">
+            📊 Dashboard
+        </button>
+    </nav>
+
+    <!-- ======================== MODALS ======================== -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div style="font-size:40px">⚠️</div>
+            <h3>Grup nombrós</h3>
+            <p id="confirmMsg"></p>
+            <button class="modal-btn" onclick="confirmLargeGroup()">Sí, és correcte</button>
+            <button class="modal-btn secondary" onclick="closeModal('confirmModal')">Revisar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div style="font-size:50px;margin-bottom:10px">✅</div>
+            <h2>Registrat!</h2>
+            <p>Dades enviades al Google Sheets.</p>
+            <button class="modal-btn" onclick="closeModal('successModal')">D'acord</button>
+        </div>
+    </div>
+
+    <!-- ======================== JAVASCRIPT ======================== -->
+    <script>
+        /* ----------------------------------------------------------------
+           CONSTANTS
+        ---------------------------------------------------------------- */
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyI6MfplhNNt1EtFILsFP7wFOsr25FwK1HWQGvYf7e6o-eyRPA0h3YP807HUEhYl0IK/exec';
+        const DARK_KEY = 'cmf_dark_theme';
+
+        /* ----------------------------------------------------------------
+           THEME SWITCHER
+        ---------------------------------------------------------------- */
+        function toggleTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'classic' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem(DARK_KEY, newTheme);
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('fabIcon').textContent = '☀️';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('fabIcon').textContent = '🌙';
+            }
+            // Redibuixem les gràfiques si el dashboard és visible
+            if (document.getElementById('view-dash').classList.contains('active')) {
+                renderAllCharts();
+            }
+        }
+
+        /* ----------------------------------------------------------------
+           NAVEGACIÓ VISTES
+        ---------------------------------------------------------------- */
+        function switchView(id) {
+            ['reg', 'dash'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.toggle('active', v === id);
+                document.getElementById(`nav-${v}`).classList.toggle('active', v === id);
+            });
+            if (id === 'dash') loadDashboard();
+        }
+
+        /* ----------------------------------------------------------------
+           FORMULARI — LÒGICA IDÈNTICA A FINAL.HTML
+        ---------------------------------------------------------------- */
+        let largeGroupConfirmed = false;
+
+        const state = {
+            tipusClient: null, comVenen: null,
+            tipusVisita: null, destinacio: null, edat: null
+        };
+
+        // Càrrega inicial del comptador
+        window.onload = function () {
+            // Restaurar tema guardat
+            applyTheme(localStorage.getItem(DARK_KEY) || 'classic');
+
+            fetch(SCRIPT_URL)
+                .then(r => r.json())
+                .then(r => {
+                    if (r.dailyCount !== undefined) {
+                        document.getElementById('counterUI').textContent =
+                            `Avui: ${r.dailyCount} visitants registrats`;
+                    }
+                }).catch(() => { });
+        };
+
+        // Botons d'opció (toggle actiu)
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const group = this.dataset.group;
+                const value = this.dataset.value;
+
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    state[group] = null;
+                } else {
+                    document.querySelectorAll(`[data-group="${group}"]`)
+                        .forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state[group] = value;
+                }
+
+                if (group === 'destinacio') handleDestinacioChange(state.destinacio);
+                validateForm();
+            });
+        });
+
+        function handleDestinacioChange(value) {
+            const tvSec = document.getElementById('tipusVisitaSection');
+            const cvSec = document.getElementById('comVenenSection');
+            tvSec.classList.add('hidden');
+            cvSec.classList.add('hidden');
+            if (value === 'Experiències') { tvSec.classList.remove('hidden'); cvSec.classList.remove('hidden'); }
+            else if (value === 'Wine Bar' || value === 'Botiga') { cvSec.classList.remove('hidden'); }
+        }
+
+        document.getElementById('procedencia').addEventListener('change', function () {
+            document.getElementById('catalunyaFields').classList.toggle('hidden', this.value !== 'Catalunya');
+            document.getElementById('altresPaisFields').classList.toggle('hidden', this.value !== 'Altres');
+            validateForm();
+        });
+
+        function validateForm() {
+            const num = document.getElementById('numPersones').value;
+            const proc = document.getElementById('procedencia').value;
+            const altP = document.getElementById('altresPais').value;
+            let valid = num > 0 && proc && state.destinacio && state.edat && state.comVenen;
+            if (proc === 'Altres' && !altP) valid = false;
+            if (state.destinacio === 'Experiències' && !state.tipusVisita) valid = false;
+            document.getElementById('submitBtn').disabled = !valid;
+        }
+
+        document.getElementById('numPersones').addEventListener('input', function () {
+            largeGroupConfirmed = false; validateForm();
+        });
+        document.getElementById('altresPais').addEventListener('change', validateForm);
+
+        document.getElementById('visitorForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const n = parseInt(document.getElementById('numPersones').value);
+            if (n > 12 && !largeGroupConfirmed) {
+                document.getElementById('confirmMsg').textContent =
+                    `Has indicat ${n} persones. Vols continuar?`;
+                document.getElementById('confirmModal').style.display = 'flex';
+            } else {
+                executeSubmit();
+            }
+        });
+
+        function confirmLargeGroup() {
+            largeGroupConfirmed = true;
+            closeModal('confirmModal');
+            executeSubmit();
+        }
+
+        async function executeSubmit() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Guardant...';
+
+            const data = {
+                numPersones: document.getElementById('numPersones').value,
+                tipusClient: state.tipusClient,
+                edat: state.edat,
+                procedencia: document.getElementById('procedencia').value,
+                altresPais: document.getElementById('altresPais').value,
+                comarca: document.getElementById('comarca').value,
+                poblacio: document.getElementById('poblacio').value,
+                destinacio: state.destinacio,
+                comVenen: state.comVenen,
+                tipusVisita: state.tipusVisita,
+                despesa: document.getElementById('despesa').value,
+                observacions: document.getElementById('observacions').value
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) })
+                .then(r => r.json())
+                .then(r => {
+                    if (r.status === 'ok') {
+                        document.getElementById('counterUI').textContent =
+                            `Avui: ${r.dailyCount} visitants registrats`;
+                        document.getElementById('successModal').style.display = 'flex';
+                        resetForm();
+                    } else throw new Error(r.message);
+                })
+                .catch(err => {
+                    alert('Error al guardar: ' + err.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Registrar Visita';
+                });
+        }
+
+        function resetForm() {
+            document.getElementById('visitorForm').reset();
+            document.querySelectorAll('.option-btn.active').forEach(b => b.classList.remove('active'));
+            document.getElementById('catalunyaFields').classList.add('hidden');
+            document.getElementById('altresPaisFields').classList.add('hidden');
+            handleDestinacioChange(null);
+            Object.keys(state).forEach(k => state[k] = null);
+            largeGroupConfirmed = false;
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Registrar Visita';
+            validateForm();
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        /* ----------------------------------------------------------------
+           DASHBOARD — CÀRREGA I GRÀFIQUES
+        ---------------------------------------------------------------- */
+        let dashData = null;       // Dades reals del GAS (si disponibles)
+        let activeRange = 'day';   // Rang temporal actiu per a ingressos
+        let charts = {};
+
+        async function loadDashboard() {
+            // Si ja tenim les dades, no les tornem a carregar, només redibuixem
+            if (dashData && dashData.stats) { renderAllCharts(); return; }
+
+            const demo = buildDemoData();
+
+            try {
+                const res = await fetch(SCRIPT_URL);
+                const json = await res.json();
+                // Si el GAS retorna stats complets, els usem; si no, mode demo
+                if (json && json.stats && (json.stats.statsRange || json.stats.hourly)) {
+                    dashData = json;
+                } else {
+                    // Merge: usem el dailyCount real del GAS + dades demo per als charts
+                    dashData = demo;
+                    if (json.dailyCount !== undefined) dashData.dailyCount = json.dailyCount;
+                    if (json.absoluteTotal !== undefined) dashData.absoluteTotal = json.absoluteTotal;
+                }
+            } catch (e) {
+                dashData = demo;
+            }
+            updateKPIs();
+            renderAllCharts();
+        }
+
+        function buildDemoData() {
+            // Dades de demostració per visualitzar mentre el GAS no es desplega ampliat
+            return {
+                dailyCount: 12,
+                absoluteTotal: 2850,
+                stats: {
+                    hourly: [0, 0, 0, 0, 0, 0, 0, 0, 8, 15, 45, 60, 55, 35, 25, 30, 45, 55, 40, 20, 5, 0, 0, 0],
+                    ages: { "18-35": 85, "36-50": 120, "51-65": 65, "+65": 30 },
+                    expense: { daily: 480, weekly: 2200, monthly: 8500, quarter: 22000, total: 45000 },
+                    expenseMean: { daily: 40, weekly: 38, monthly: 42, quarter: 39, total: 41 },
+                    counts: { daily: 12, weekly: 58, monthly: 203, quarter: 564, total: 1100 },
+                    origins: { "Catalunya": 320, "França": 240, "Espanya": 180, "Alemanya": 140, "UK": 90, "USA i Canadà": 70, "Holanda": 45, "Nòrdics": 35 },
+                    business: { "Experiències": 480, "Wine Bar": 220, "Botiga": 150 },
+                    expenseSeries: {
+                        day: { labels: ["09h", "10h", "11h", "12h", "13h", "16h", "17h", "18h", "19h"], values: [0, 80, 120, 200, 160, 80, 150, 180, 90] },
+                        week: { labels: ["Dl", "Dt", "Dc", "Dj", "Dv", "Ds", "Dg"], values: [320, 450, 280, 510, 620, 700, 320] },
+                        month: { labels: ["S1", "S2", "S3", "S4"], values: [1800, 2400, 2100, 2200] },
+                        quarter: { labels: ["Gen", "Feb", "Mar"], values: [6500, 8200, 7300] },
+                        total: { labels: ["2023", "2024", "2025"], values: [15000, 18200, 11800] }
+                    }
+                }
+            };
+        }
+
+        function updateKPIs() {
+            updateRangeKPIs(activeRange);
+        }
+
+        // Mapa de rangs frontend → claus GAS (daily/weekly/monthly vs day/week/month)
+        const RANGE_KEY = { day: 'daily', week: 'weekly', month: 'monthly', quarter: 'quarter', total: 'total' };
+
+        function updateRangeKPIs(range) {
+            if (!dashData || !dashData.stats) return;
+            const s = dashData.stats;
+            const map = { day: 'daily', week: 'weekly', month: 'monthly', quarter: 'quarter', total: 'total' };
+            const labels = { day: 'avui', week: 'setmana', month: 'mes', quarter: 'trimestre', total: 'històric' };
+            const k = map[range] || range;
+
+            // Actualitzem els valors dinàmics del període
+            document.getElementById('kpi-income').textContent = (s.expense[k] || 0).toFixed(0) + '€';
+            document.getElementById('kpi-visitors-period').textContent = (s.counts[k] || 0);
+            document.getElementById('kpi-avg').textContent = (s.expenseMean[k] || 0).toFixed(1) + '€';
+            document.getElementById('range-label').textContent = labels[range] || range;
+            document.getElementById('avg-sub-label').textContent = range === 'total' ? 'mitjana històrica' : `període ${labels[range]}`;
+
+            // Actualitzem les etiquetes de rang als KPIs
+            document.querySelectorAll('.range-text-small').forEach(el => {
+                el.textContent = labels[range] || range;
+            });
+        }
+
+        function setRange(range, btn) {
+            activeRange = range;
+            document.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            updateRangeKPIs(range);
+            renderAllCharts(); // Ara redibuixem TOTES les gràfiques
+        }
+
+        function getCurrentStats() {
+            // Si el GAS ha enviat el nou camp 'statsRange', usem les dades del rang actiu
+            if (dashData.stats && dashData.stats.statsRange && dashData.stats.statsRange[activeRange]) {
+                return dashData.stats.statsRange[activeRange];
+            }
+            // Fallback per dades globals (com abans)
+            return dashData.stats || {};
+        }
+
+        function animNum(id, end, decimals, suffix = '') {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let cur = 0; const steps = 25;
+            const iv = setInterval(() => {
+                cur += end / steps;
+                if (cur >= end) { el.textContent = end.toFixed(decimals) + suffix; clearInterval(iv); }
+                else el.textContent = cur.toFixed(decimals) + suffix;
+            }, 35);
+        }
+
+        function isDarkTheme() {
+            return document.documentElement.getAttribute('data-theme') === 'dark';
+        }
+
+        const PALETTE = ['#8b5cf6', '#00f2fe', '#f472b6', '#f59e0b', '#10b981', '#3b82f6', '#e11d48', '#06b6d4'];
+
+        function getChartOptions(mode) {
+            return {
+                chart: { background: 'transparent', toolbar: { show: false }, zoom: { enabled: false } },
+                theme: { mode },
+                grid: { borderColor: mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#f1f5f9' },
+                tooltip: { theme: mode }
+            };
+        }
+
+        function renderAllCharts() {
+            const dark = isDarkTheme();
+            renderExpenseChart(dark);
+            renderHourlyChart(dark);
+            renderOriginsChart(dark);
+            renderAgesChart(dark);
+            renderBusinessChart(dark);
+        }
+
+        function renderExpenseChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+            const src = dashData.stats.expenseSeries[activeRange] || { labels: [], values: [] };
+            const opt = {
+                ...getChartOptions(mode),
+                chart: { ...getChartOptions(mode).chart, height: 200, type: 'area' },
+                series: [{ name: 'Ingressos (€)', data: src.values }],
+                colors: ['#8b5cf6'],
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: .7, opacityTo: .05 } },
+                stroke: { width: 3, curve: 'smooth' },
+                dataLabels: { enabled: false },
+                xaxis: { categories: src.labels }
+            };
+            if (charts.expense) charts.expense.destroy();
+            charts.expense = new ApexCharts(document.getElementById('chart-expense'), opt);
+            charts.expense.render();
+        }
+
+        function renderHourlyChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+            const s = getCurrentStats();
+            const allHours = s.hourly || new Array(24).fill(0);
+            // Només mostrem de 8h a 21h (índexs 8..20)
+            const startH = 8, endH = 21;
+            const sliced = allHours.slice(startH, endH);
+            const labels = sliced.map((_, i) => `${startH + i}h`);
+            const opt = {
+                ...getChartOptions(mode),
+                chart: { ...getChartOptions(mode).chart, height: 200, type: 'bar' },
+                series: [{ name: 'Visitants', data: sliced }],
+                colors: ['#00f2fe'],
+                plotOptions: { bar: { borderRadius: 6, columnWidth: '60%' } },
+                dataLabels: { enabled: false },
+                xaxis: { categories: labels }
+            };
+            if (charts.hourly) charts.hourly.destroy();
+            charts.hourly = new ApexCharts(document.getElementById('chart-hourly'), opt);
+            charts.hourly.render();
+        }
+
+        // --- PROCEDÈNCIES AMB ZOOM ---
+        let originsMaxVal = 100;
+
+        function renderOriginsChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+            const s = getCurrentStats();
+            const orig = s.origins || {};
+            const sorted = Object.entries(orig).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            originsMaxVal = sorted.length > 0 ? sorted[0][1] : 100;
+
+            // Reset slider
+            const slider = document.getElementById('originsZoom');
+            if (slider) slider.value = 100;
+
+            const opt = {
+                ...getChartOptions(mode),
+                chart: { ...getChartOptions(mode).chart, height: 280, type: 'bar', id: 'originsChart' },
+                series: [{ name: 'Visitants', data: sorted.map(e => e[1]) }],
+                colors: PALETTE,
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        horizontal: true,
+                        distributed: true,
+                        barHeight: '65%'
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: { fontSize: '11px', fontWeight: 700 },
+                    offsetX: 4
+                },
+                legend: { show: false },
+                xaxis: {
+                    categories: sorted.map(e => e[0]),
+                    min: 0,
+                    max: originsMaxVal,
+                    labels: {
+                        show: true,
+                        style: { fontSize: '10px' }
+                    },
+                    axisBorder: { show: true, color: 'rgba(0,0,0,0.1)' }
+                },
+                yaxis: {
+                    labels: {
+                        show: true,
+                        minWidth: 100,
+                        maxWidth: 150,
+                        style: { fontSize: '11px', fontWeight: 600 }
+                    }
+                },
+                grid: {
+                    show: true,
+                    padding: { left: 0, right: 30 },
+                    xaxis: { lines: { show: true } },
+                    yaxis: { lines: { show: false } }
+                }
+            };
+            if (charts.origins) charts.origins.destroy();
+            charts.origins = new ApexCharts(document.getElementById('chart-origins'), opt);
+            charts.origins.render();
+        }
+
+        function applyOriginsZoom(pct) {
+            if (!charts.origins) return;
+            // Calculem el nou màxim de l'eix Y (que és l'eix de valors en barres horitzontals)
+            // ApexCharts en barres horitzontals usa 'xaxis' per al rang de valors
+            const newMax = Math.max(1, Math.round(originsMaxVal * (pct / 100)));
+            charts.origins.updateOptions({
+                xaxis: { min: 0, max: newMax }
+            }, false, false);
+        }
+
+        // --- EDATS: BARRES ---
+        function renderAgesChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+            const s = getCurrentStats();
+            const ages = s.ages || {};
+            const opt = {
+                ...getChartOptions(mode),
+                chart: { ...getChartOptions(mode).chart, height: 240, type: 'bar' },
+                series: [{ name: 'Visitants', data: Object.values(ages) }],
+                colors: ['#f472b6'], // Rosa vibrant
+                plotOptions: {
+                    bar: {
+                        borderRadius: 8,
+                        columnWidth: '50%',
+                        distributed: true
+                    }
+                },
+                dataLabels: { enabled: true, style: { fontSize: '12px' } },
+                legend: { show: false },
+                xaxis: { categories: Object.keys(ages) },
+                grid: { show: false }
+            };
+            if (charts.ages) charts.ages.destroy();
+            charts.ages = new ApexCharts(document.getElementById('chart-ages'), opt);
+            charts.ages.render();
+        }
+
+        // --- MIX DE NEGOCI AMB DRILLDOWN ---
+        function renderBusinessChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+            const s = getCurrentStats();
+            const biz = s.business || {};
+            const labels = Object.keys(biz);
+            const opt = {
+                ...getChartOptions(mode),
+                chart: {
+                    ...getChartOptions(mode).chart,
+                    height: 220,
+                    type: 'donut',
+                    events: {
+                        dataPointSelection: function (event, chartContext, config) {
+                            const selectedLabel = labels[config.dataPointIndex];
+                            if (selectedLabel === 'Experiències') {
+                                toggleExpDrilldown(dark);
+                            } else {
+                                // Tancar si cliquem una altra cosa
+                                document.getElementById('expDrilldown').classList.remove('open');
+                            }
+                        }
+                    }
+                },
+                series: Object.values(biz),
+                labels: labels,
+                colors: ['#8b5cf6', '#00f2fe', '#f472b6'],
+                stroke: { show: false },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val) {
+                        return val.toFixed(1) + "%"
+                    },
+                    dropShadow: { enabled: false }
+                },
+                legend: { position: 'bottom', fontSize: '11px' },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '72%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            if (charts.business) charts.business.destroy();
+            charts.business = new ApexCharts(document.getElementById('chart-business'), opt);
+            charts.business.render();
+
+            // Tanquem el panel per defecte en redibuixar tot
+            document.getElementById('expDrilldown').classList.remove('open');
+        }
+
+        function toggleExpDrilldown(dark) {
+            const panel = document.getElementById('expDrilldown');
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                return;
+            }
+            panel.classList.add('open');
+            renderExpDetailChart(dark);
+        }
+
+        function renderExpDetailChart(dark) {
+            const mode = dark ? 'dark' : 'light';
+
+            // Si el rang és 'total', usem els masterTotals de la fila 4 que hem passat des del GAS
+            const isTotal = (activeRange === 'total');
+            const s = getCurrentStats();
+            const src = isTotal ?
+                (dashData.stats.masterTotals || { VT: 0, EVT: 0, VTM: 0, MASOS: 0 }) :
+                (s.experienceTypes || { VT: 0, EVT: 0, VTM: 0, MASOS: 0 });
+
+            const labels = Object.keys(src);
+            const series = Object.values(src);
+
+            const opt = {
+                ...getChartOptions(mode),
+                chart: {
+                    ...getChartOptions(mode).chart,
+                    height: 240,
+                    type: 'donut'
+                },
+                series: series,
+                labels: labels,
+                colors: ['#8b5cf6', '#f59e0b', '#10b981', '#3b82f6', '#f472b6'],
+                stroke: { show: false },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val) {
+                        return val.toFixed(1) + "%"
+                    },
+                    dropShadow: { enabled: false }
+                },
+                legend: { position: 'bottom', fontSize: '11px' },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: isTotal ? 'Històric' : 'Període',
+                                    formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            if (charts.expDetail) charts.expDetail.destroy();
+            charts.expDetail = new ApexCharts(document.getElementById('chart-exp-detail'), opt);
+            charts.expDetail.render();
+        }
+
+    </script>
+
+    <!--
+  ════════════════════════════════════════════════════════════
+  CODI GOOGLE APPS SCRIPT (doGet ampliat) — COPIAR AL GAS
+  ════════════════════════════════════════════════════════════
+  Substituïu la vostra funció doGet() al GAS per aquesta versió
+  ampliada. La funció doPost() NO CANVIA.
+
+  function doGet(e) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheets()[0];
+    const tz = ss.getSpreadsheetTimeZone();
+    const now = new Date();
+    const todayStr = Utilities.formatDate(now, tz, "dd/MM/yyyy");
+
+    const totalAvui   = sheet.getRange("F3").getValue();
+    const totalAbsolut = sheet.getRange("I3").getValue();
+
+    const data = sheet.getDataRange().getValues();
+    const logs = data.slice(6); // Files de dades reals (fila 7 en endavant)
+
+    const w1ago = new Date(now - 7*86400000);
+    const m1ago = new Date(now.getFullYear(), now.getMonth()-1, now.getDate());
+    const q1ago = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
+
+    let stats = {
+      hourly:  Array(24).fill(0),
+      ages:    { "18-35":0,"36-50":0,"51-65":0,"+65":0 },
+      expense: { daily:0, weekly:0, monthly:0, quarter:0 },
+      expenseMean: { daily:0, weekly:0, monthly:0, quarter:0 },
+      counts:  { daily:0, weekly:0, monthly:0, quarter:0 },
+      origins: {},
+      business:{ "Experiències":0,"Wine Bar":0,"Botiga":0 },
+      expenseSeries: { day:{labels:[],values:[]}, week:{labels:[],values:[]},
+                       month:{labels:[],values:[]}, quarter:{labels:[],values:[]} }
+    };
+
+    const paisosCols = {
+      8:"Catalunya",9:"Espanya",10:"França",11:"UK",12:"Alemanya",
+      13:"Holanda",14:"Nòrdics",15:"Belgica",16:"Resta d'Europa",17:"Russia",18:"USA i Canadà"
+    };
+
+    const dayExp={}, weekExp=[0,0,0,0,0,0,0], monthExp=[0,0,0,0];
+
+    logs.forEach(row => {
+      const dateStr = (row[0]||'').toString();
+      const hora    = (row[1]||'').toString();
+      const n       = Number(row[2])||0;
+      const edat    = (row[3]||'').toString();
+      const despesa = Number((row[7]||'').toString().replace(',','.'))||0;
+
+      const parts = dateStr.split("/");
+      if (parts.length < 3) return;
+      const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+
+      // Hores punta
+      const h = parseInt((hora).split(":")[0]);
+      if (!isNaN(h) && h >= 0 && h < 24) stats.hourly[h] += n;
+
+      // Edats
+      if (stats.ages[edat] !== undefined) stats.ages[edat] += n;
+
+      // Orígens
+      for (let ci in paisosCols) {
+        if (Number(row[ci]) > 0) {
+          const pais = paisosCols[ci];
+          stats.origins[pais] = (stats.origins[pais]||0) + Number(row[ci]);
+        }
+      }
+      // Altres països (col 20)
+      if (row[19] && row[19].toString().trim()) {
+        const p = row[19].toString().trim();
+        stats.origins[p] = (stats.origins[p]||0) + n;
+      }
+
+      // Mix de negoci (cols 29,30,31)
+      if (Number(row[29])>0) stats.business["Experiències"] += Number(row[29]);
+      if (Number(row[30])>0) stats.business["Wine Bar"]     += Number(row[30]);
+      if (Number(row[31])>0) stats.business["Botiga"]       += Number(row[31]);
+
+      // Despeses per rang temporal
+      const quarter = rowDate >= q1ago;
+      const monthly = rowDate >= m1ago;
+      const weekly  = rowDate >= w1ago;
+      const daily   = dateStr === todayStr;
+
+      if (quarter) { stats.expense.quarter += despesa; stats.counts.quarter += n; }
+      if (monthly)  { stats.expense.monthly += despesa; stats.counts.monthly += n; }
+      if (weekly)   { stats.expense.weekly  += despesa; stats.counts.weekly  += n; }
+      if (daily)    { stats.expense.daily   += despesa; stats.counts.daily   += n;
+        dayExp[hora.substring(0,2)] = (dayExp[hora.substring(0,2)]||0) + despesa;
+      }
+
+      // Sèries setmanals (últims 7 dies, per dia)
+      if (weekly) {
+        const diff = Math.floor((now - rowDate)/86400000);
+        if (diff >= 0 && diff < 7) weekExp[6-diff] = (weekExp[6-diff]||0) + despesa;
+      }
+    });
+
+    // Calcular mitjanes
+    ["daily","weekly","monthly","quarter"].forEach(r => {
+      stats.expenseMean[r] = stats.counts[r] > 0
+        ? +(stats.expense[r] / stats.counts[r]).toFixed(2) : 0;
+    });
+
+    // Construir sèries temporals
+    const weekDays = ["Dl","Dt","Dc","Dj","Dv","Ds","Dg"];
+    const today = now.getDay(); // 0=Dg
+    const dayOrder = [];
+    for (let i=6; i>=0; i--) dayOrder.unshift(weekDays[(today-i+7)%7]);
+    stats.expenseSeries.week = { labels: dayOrder, values: weekExp };
+
+    const dayHours = Object.keys(dayExp).sort();
+    stats.expenseSeries.day = { labels: dayHours.map(h=>h+"h"), values: dayHours.map(h=>dayExp[h]) };
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok",
+      dailyCount: totalAvui,
+      absoluteTotal: totalAbsolut,
+      stats: stats
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+-->
+
+</body>
+
+</html>
