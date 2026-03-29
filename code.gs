@@ -59,7 +59,7 @@ function doGet() {
   var todayStr = Utilities.formatDate(now, tz, "dd/MM/yyyy");
 
   // KPIs principals (caselles fixes)
-  var totalAvui = sheet.getRange("F3").getValue();
+  // var totalAvui = sheet.getRange("F3").getValue(); // Ja no usem F3 directament per al dashboard 24h
   var totalAbsolut = sheet.getRange("I3").getValue();
 
   // Llegim TOTES les dades
@@ -129,7 +129,7 @@ function doGet() {
     var despStr = (row[7] || "").toString().replace(",", ".");
     var despesa = Number(despStr) || 0;
 
-    // --- Parsejem la DATA (pot ser Date object o string "dd/MM/yyyy") ---
+    // --- Parsejem data i hora ---
     var rowDate = null;
     var rawDate = row[0];
     if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
@@ -141,24 +141,33 @@ function doGet() {
         rowDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
       }
     }
-    if (!rowDate) continue;  // Fila sense data vàlida, saltar
+    if (!rowDate) continue;
 
-    var rowDateStr = Utilities.formatDate(rowDate, tz, "dd/MM/yyyy");
-
-    var hora = -1;
+    var hora = 0;
+    var minuts = 0;
     var rawHora = row[1];
     if (rawHora instanceof Date && !isNaN(rawHora.getTime())) {
       hora = rawHora.getHours();
+      minuts = rawHora.getMinutes();
     } else {
       var horaStr = (rawHora || "").toString().trim();
-      if (horaStr) hora = parseInt(horaStr.split(":")[0], 10);
+      if (horaStr) {
+        var hParts = horaStr.split(":");
+        hora = parseInt(hParts[0], 10) || 0;
+        if (hParts.length > 1) minuts = parseInt(hParts[1], 10) || 0;
+      }
     }
 
+    // Combinem per tenir timestamp precís
+    var fullDateTime = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate(), hora, minuts, 0, 0);
+    var rowTime = fullDateTime.getTime();
+    var nowTime = now.getTime();
+
     // Identifiquem rangs
-    var isToday   = (rowDateStr === todayStr);
-    var isWeekly  = (rowDate >= w1ago);
-    var isMonthly = (rowDate >= m1ago);
-    var isQuarter = (rowDate >= q1ago);
+    var isLast24h = (rowTime >= nowTime - 86400000); // 24 hores en ms
+    var isWeekly  = (rowTime >= nowTime - 7 * 86400000);
+    var isMonthly = (fullDateTime >= m1ago);
+    var isQuarter = (fullDateTime >= q1ago);
 
     // Funcio per omplir un bloc d'estadístiques per a un període
     var fillPeriod = function(s) {
@@ -221,7 +230,7 @@ function doGet() {
       var diffDays = Math.floor((now.getTime() - rowDate.getTime()) / 86400000);
       if (diffDays >= 0 && diffDays < 7) weekExpByDay[6 - diffDays] += despesa;
     }
-    if (isToday) {
+    if (isLast24h) {
       fillPeriod(statsRange.day);
       stats.expense.daily += despesa;
       stats.counts.daily  += n;
@@ -294,7 +303,7 @@ function doGet() {
   // --- Resposta final ---
   var result = {
     status: "ok",
-    dailyCount: totalAvui,
+    dailyCount: stats.counts.daily, // Retornem el compte de les 24h
     absoluteTotal: totalAbsolut,
     stats: {
       expense:       stats.expense,
@@ -390,11 +399,37 @@ function doPost(e) {
     sheet.getRange(lastRow < 6 ? 7 : lastRow + 1, 1, 1, 35).setValues([row]);
 
     SpreadsheetApp.flush();
-    var nouTotal = sheet.getRange("F3").getValue();
+
+    // Calculem el total de les últimes 24h (consistent amb el doGet)
+    var allData = sheet.getDataRange().getValues();
+    var allLogs = allData.slice(6);
+    var nowPost = new Date();
+    var cutoff = nowPost.getTime() - 86400000;
+    var count24h = 0;
+    for (var ri = 0; ri < allLogs.length; ri++) {
+      var rr = allLogs[ri];
+      var rd = rr[0];
+      if (!(rd instanceof Date && !isNaN(rd.getTime()))) {
+        var ds = (rd || "").toString().trim().split("/");
+        if (ds.length >= 3) rd = new Date(Number(ds[2]), Number(ds[1]) - 1, Number(ds[0]));
+        else continue;
+      }
+      var rh = rr[1];
+      var rhh = 0, rmm = 0;
+      if (rh instanceof Date && !isNaN(rh.getTime())) {
+        rhh = rh.getHours(); rmm = rh.getMinutes();
+      } else {
+        var hs = (rh || "").toString().split(":");
+        rhh = parseInt(hs[0], 10) || 0;
+        if (hs.length > 1) rmm = parseInt(hs[1], 10) || 0;
+      }
+      var fullDT = new Date(rd.getFullYear(), rd.getMonth(), rd.getDate(), rhh, rmm, 0, 0);
+      if (fullDT.getTime() >= cutoff) count24h += (Number(rr[2]) || 0);
+    }
 
     return ContentService.createTextOutput(JSON.stringify({ 
       status: "ok",
-      dailyCount: nouTotal
+      dailyCount: count24h
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (e) {

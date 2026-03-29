@@ -170,6 +170,7 @@
         [data-theme="dark"] header h1 {
             background: linear-gradient(90deg, #fff 20%, var(--primary) 80%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -947,7 +948,7 @@
                 <button type="submit" id="submitBtn" disabled>Registrar Visita</button>
             </form>
 
-            <div class="daily-counter" id="counterUI">Avui: 0 visitants</div>
+            <div class="daily-counter" id="counterUI">Últimes 24h: 0 visitants</div>
         </div>
 
         <!-- ======================== VISTA: DASHBOARD ======================== -->
@@ -965,17 +966,17 @@
             <!-- 3 KPIs superior (Anàlisi de Període) -->
             <div class="kpi-row">
                 <div class="kpi-card">
-                    <div class="kpi-label">Visitants (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-label">Visitants (<span class="range-text-small">24h</span>)</div>
                     <div class="kpi-val" id="kpi-visitors-period">0</div>
                     <div class="kpi-sub" id="visitors-sub-label">vistes del període</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Mitjana (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-label">Mitjana (<span class="range-text-small">24h</span>)</div>
                     <div class="kpi-val" id="kpi-avg" style="color: var(--primary);">0€</div>
                     <div class="kpi-sub" id="avg-sub-label">per visita</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Total Període (<span class="range-text-small">avui</span>)</div>
+                    <div class="kpi-label">Total Període (<span class="range-text-small">24h</span>)</div>
                     <div class="kpi-val" id="kpi-income">0€</div>
                     <div class="kpi-sub">ingressos acumulats</div>
                 </div>
@@ -983,7 +984,7 @@
 
             <!-- Anàlisi d'Ingressos -->
             <div class="chart-section">
-                <div class="chart-title">📈 Evolució d'ingressos (<span id="range-label">avui</span>)</div>
+                <div class="chart-title">📈 Evolució d'ingressos (<span id="range-label">24h</span>)</div>
                 <div id="chart-expense"></div>
             </div>
 
@@ -1064,7 +1065,7 @@
         /* ----------------------------------------------------------------
            CONSTANTS
         ---------------------------------------------------------------- */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyI6MfplhNNt1EtFILsFP7wFOsr25FwK1HWQGvYf7e6o-eyRPA0h3YP807HUEhYl0IK/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhK-ni-CN4Si8pwE87XvEcXXdxpxndbYxMcDCETwz6VRI86vtTeHwikpZiIVlIUzET/exec';
         const DARK_KEY = 'cmf_dark_theme';
 
         /* ----------------------------------------------------------------
@@ -1122,7 +1123,7 @@
                 .then(r => {
                     if (r.dailyCount !== undefined) {
                         document.getElementById('counterUI').textContent =
-                            `Avui: ${r.dailyCount} visitants registrats`;
+                            `Últimes 24h: ${r.dailyCount} visitants registrats`;
                     }
                 }).catch(() => { });
         };
@@ -1222,7 +1223,7 @@
                 .then(r => {
                     if (r.status === 'ok') {
                         document.getElementById('counterUI').textContent =
-                            `Avui: ${r.dailyCount} visitants registrats`;
+                            `Últimes 24h: ${r.dailyCount} visitants registrats`;
                         document.getElementById('successModal').style.display = 'flex';
                         resetForm();
                     } else throw new Error(r.message);
@@ -1317,7 +1318,7 @@
             if (!dashData || !dashData.stats) return;
             const s = dashData.stats;
             const map = { day: 'daily', week: 'weekly', month: 'monthly', quarter: 'quarter', total: 'total' };
-            const labels = { day: 'avui', week: 'setmana', month: 'mes', quarter: 'trimestre', total: 'històric' };
+            const labels = { day: '24h', week: 'setmana', month: 'mes', quarter: 'trimestre', total: 'històric' };
             const k = map[range] || range;
 
             // Actualitzem els valors dinàmics del període
