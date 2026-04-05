@@ -1065,7 +1065,7 @@
         /* ----------------------------------------------------------------
            CONSTANTS
         ---------------------------------------------------------------- */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhK-ni-CN4Si8pwE87XvEcXXdxpxndbYxMcDCETwz6VRI86vtTeHwikpZiIVlIUzET/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwU8Fy1bhlcbKrCNm4meLav0wtZ63RVu0SVxu6i7bqX6uDid5YXCuPFgjwvyevf8wr9/exec';
         const DARK_KEY = 'cmf_dark_theme';
 
         /* ----------------------------------------------------------------
@@ -1118,7 +1118,7 @@
             // Restaurar tema guardat
             applyTheme(localStorage.getItem(DARK_KEY) || 'classic');
 
-            fetch(SCRIPT_URL)
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getDashboard' }) })
                 .then(r => r.json())
                 .then(r => {
                     if (r.dailyCount !== undefined) {
@@ -1259,25 +1259,38 @@
         let charts = {};
 
         async function loadDashboard() {
-            // Si ja tenim les dades, no les tornem a carregar, només redibuixem
-            if (dashData && dashData.stats) { renderAllCharts(); return; }
+            // Usem el caché NOMÉS si les dades provenen del GAS real (no de demo)
+            if (dashData && dashData.stats && dashData._sourceReal) { renderAllCharts(); return; }
 
             const demo = buildDemoData();
 
             try {
-                const res = await fetch(SCRIPT_URL);
-                const json = await res.json();
-                // Si el GAS retorna stats complets, els usem; si no, mode demo
-                if (json && json.stats && (json.stats.statsRange || json.stats.hourly)) {
+                // POST per evitar el redirect 302 de GAS en context file://
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getDashboard' }) });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                // Llegim el text primer per detectar respostes no-JSON (HTML d'error)
+                const text = await res.text();
+                let json;
+                try { json = JSON.parse(text); }
+                catch (pe) { throw new Error('Resposta no és JSON: ' + text.slice(0, 120)); }
+
+                // Comprovem que el GAS ha retornat dades vàlides
+                // (Funciona tant amb format antic amb 'hourly' com nou amb 'statsRange')
+                if (json && json.stats && json.stats.expense) {
                     dashData = json;
+                    dashData._sourceReal = true;
                 } else {
-                    // Merge: usem el dailyCount real del GAS + dades demo per als charts
+                    console.warn('[Dashboard] GAS no ha retornat stats complets:', JSON.stringify(json).slice(0, 200));
                     dashData = demo;
-                    if (json.dailyCount !== undefined) dashData.dailyCount = json.dailyCount;
-                    if (json.absoluteTotal !== undefined) dashData.absoluteTotal = json.absoluteTotal;
+                    dashData._sourceReal = false;
+                    if (json && json.dailyCount !== undefined) dashData.dailyCount = json.dailyCount;
+                    if (json && json.absoluteTotal !== undefined) dashData.absoluteTotal = json.absoluteTotal;
                 }
             } catch (e) {
+                console.error('[Dashboard] Error al carregar dades del GAS:', e.message);
                 dashData = demo;
+                dashData._sourceReal = false;
             }
             updateKPIs();
             renderAllCharts();

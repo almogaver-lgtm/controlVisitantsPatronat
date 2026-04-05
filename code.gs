@@ -325,6 +325,14 @@ function doGet() {
 //  doPost — SENSE CANVIS (funciona perfectament)
 // ============================================================
 function doPost(e) {
+  // Consulta de dashboard via POST (contorna el redirect 302 de GAS en context file://)
+  try {
+    var reqData = JSON.parse(e.postData.contents);
+    if (reqData.action === 'getDashboard') {
+      return doGet();
+    }
+  } catch (dashErr) { /* no és consulta de dashboard, continua amb registre normal */ }
+
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
