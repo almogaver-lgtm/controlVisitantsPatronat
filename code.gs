@@ -164,7 +164,8 @@ function doGet() {
     var nowTime = now.getTime();
 
     // Identifiquem rangs
-    var isLast24h = (rowTime >= nowTime - 86400000); // 24 hores en ms
+    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var isLast24h = (rowTime >= todayStart); // Ara és "AVUI" (calendar day)
     var isWeekly  = (rowTime >= nowTime - 7 * 86400000);
     var isMonthly = (fullDateTime >= m1ago);
     var isQuarter = (fullDateTime >= q1ago);

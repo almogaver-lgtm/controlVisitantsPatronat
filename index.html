@@ -763,6 +763,45 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Locked / Security Styles */
+        .locked-overlay {
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .locked-overlay::after {
+            content: '🔒';
+            position: absolute;
+            inset: 0;
+            background: rgba(124, 58, 237, 0.05);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border-radius: var(--radius);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .locked-overlay.unlocked::after {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .locked-val {
+            filter: blur(10px);
+            user-select: none;
+            transition: filter 0.3s ease;
+        }
+
+        .unlocked .locked-val {
+            filter: blur(0);
+            user-select: auto;
+        }
     </style>
 </head>
 
@@ -966,26 +1005,28 @@
             <!-- 3 KPIs superior (Anàlisi de Període) -->
             <div class="kpi-row">
                 <div class="kpi-card">
-                    <div class="kpi-label">Visitants (<span class="range-text-small">24h</span>)</div>
+                    <div class="kpi-label">Visitants (<span class="range-text-small">Avui</span>)</div>
                     <div class="kpi-val" id="kpi-visitors-period">0</div>
                     <div class="kpi-sub" id="visitors-sub-label">vistes del període</div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Mitjana (<span class="range-text-small">24h</span>)</div>
-                    <div class="kpi-val" id="kpi-avg" style="color: var(--primary);">0€</div>
+                <div class="kpi-card" id="card-avg" onclick="tryUnlockExpense()">
+                    <div class="kpi-label">Mitjana (<span class="range-text-small">Avui</span>)</div>
+                    <div class="kpi-val locked-val" id="kpi-avg">0€</div>
                     <div class="kpi-sub" id="avg-sub-label">per visita</div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Total Període (<span class="range-text-small">24h</span>)</div>
-                    <div class="kpi-val" id="kpi-income">0€</div>
+                <div class="kpi-card" id="card-income" onclick="tryUnlockExpense()">
+                    <div class="kpi-label">Total Període (<span class="range-text-small">Avui</span>)</div>
+                    <div class="kpi-val locked-val" id="kpi-income">0€</div>
                     <div class="kpi-sub">ingressos acumulats</div>
                 </div>
             </div>
 
             <!-- Anàlisi d'Ingressos -->
-            <div class="chart-section">
-                <div class="chart-title">📈 Evolució d'ingressos (<span id="range-label">24h</span>)</div>
-                <div id="chart-expense"></div>
+            <div class="chart-section" id="expense-chart-container">
+                <div class="chart-title">📈 Evolució d'ingressos (<span id="range-label">Avui</span>)</div>
+                <div id="chart-expense-wrapper" class="locked-overlay" onclick="tryUnlockExpense()">
+                    <div id="chart-expense"></div>
+                </div>
             </div>
 
             <!-- Hores Punta -->
@@ -1065,7 +1106,7 @@
         /* ----------------------------------------------------------------
            CONSTANTS
         ---------------------------------------------------------------- */
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwU8Fy1bhlcbKrCNm4meLav0wtZ63RVu0SVxu6i7bqX6uDid5YXCuPFgjwvyevf8wr9/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGG_ZovgFzB3s6U59lBCMduMg0XEe36lhSpSstsgnG1tZIXPSMcBoXhQf9wcrUQlCg/exec';
         const DARK_KEY = 'cmf_dark_theme';
 
         /* ----------------------------------------------------------------
@@ -1331,7 +1372,7 @@
             if (!dashData || !dashData.stats) return;
             const s = dashData.stats;
             const map = { day: 'daily', week: 'weekly', month: 'monthly', quarter: 'quarter', total: 'total' };
-            const labels = { day: '24h', week: 'setmana', month: 'mes', quarter: 'trimestre', total: 'històric' };
+            const labels = { day: 'Avui', week: 'setmana', month: 'mes', quarter: 'trimestre', total: 'històric' };
             const k = map[range] || range;
 
             // Actualitzem els valors dinàmics del període
@@ -1345,6 +1386,44 @@
             document.querySelectorAll('.range-text-small').forEach(el => {
                 el.textContent = labels[range] || range;
             });
+
+            applySecurityLock();
+        }
+
+        /* ----------------------------------------------------------------
+           SISTEMA DE SEGURETAT (CODI 2016)
+        ---------------------------------------------------------------- */
+        let isExpenseUnlocked = sessionStorage.getItem('cmf_unlocked') === 'true';
+
+        function tryUnlockExpense() {
+            if (isExpenseUnlocked) return;
+            const code = prompt("Introdueix el codi de seguretat per veure les dades econòmiques:");
+            if (code === '2016') {
+                isExpenseUnlocked = true;
+                sessionStorage.setItem('cmf_unlocked', 'true');
+                applySecurityLock();
+                if (typeof renderExpenseChart === 'function') renderExpenseChart(isDarkTheme());
+            } else if (code !== null) {
+                alert("Codi incorrecte");
+            }
+        }
+
+        function applySecurityLock() {
+            const avgCard = document.getElementById('card-avg');
+            const incomeCard = document.getElementById('card-income');
+            const chartWrapper = document.getElementById('chart-expense-wrapper');
+
+            if (!avgCard || !incomeCard || !chartWrapper) return;
+
+            if (isExpenseUnlocked) {
+                avgCard.classList.add('unlocked');
+                incomeCard.classList.add('unlocked');
+                chartWrapper.classList.add('unlocked');
+            } else {
+                avgCard.classList.remove('unlocked');
+                incomeCard.classList.remove('unlocked');
+                chartWrapper.classList.remove('unlocked');
+            }
         }
 
         function setRange(range, btn) {
